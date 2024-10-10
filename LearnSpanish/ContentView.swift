@@ -57,7 +57,7 @@ struct TopicLessonView: View {
                 Text("Take the Quiz")
             }
         }
-        .navigationTitle("\(topic)")
+        .navigationTitle("\(topic)")s
     }
 }
 
@@ -74,7 +74,7 @@ struct QuizScreen: View {
                     Text("C")
                 }
             }
-            Text("Quiz Form Goes Here")
+            Text("Quiz Form Goes Here so please work")
         }
     }
 }
