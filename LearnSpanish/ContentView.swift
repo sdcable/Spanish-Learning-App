@@ -7,15 +7,75 @@
 
 import SwiftUI
 
+let topics = [
+    "Basic Greetings and Farewells",
+    "Common Phrases",
+    "Numbers (1-10)",
+    "Colors",
+    "Family Members",
+    "Food and Drink",
+    "Common Adjetives",
+    "Days of the Week",
+    "Weather Vocabulary"
+]
+
 struct ContentView: View {
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        NavigationStack {
+            List(topics, id: \.self) { topic in
+                TopicCell(topic: topic)
+            }
+            .listStyle(.plain)
+            .navigationTitle("Learn Spanish")
         }
-        .padding()
+    }
+}
+    
+struct TopicCell: View{
+    let topic: String
+    
+    var body: some View {
+        HStack{
+            NavigationLink{
+                TopicLessonView(topic: topic)
+            }label: {
+                Text(topic)
+            }
+        }
+    }
+}
+
+struct TopicLessonView: View {
+    let topic: String
+    
+    var body: some View {
+        VStack {
+            Text("Lesson about topic: \(topic)")
+            NavigationLink {
+                QuizScreen()
+            } label: {
+                Text("Take the Quiz")
+            }
+        }
+        .navigationTitle("\(topic)")
+    }
+}
+
+struct QuizScreen: View {
+    var body: some View{
+        VStack {
+            Form{
+                Section{
+                    Text("Question N goes here.")
+                }
+                Section{
+                    Text("A")
+                    Text("B")
+                    Text("C")
+                }
+            }
+            Text("Quiz Form Goes Here")
+        }
     }
 }
 
