@@ -57,7 +57,7 @@ struct TopicLessonView: View {
                 Text("Take the Quiz")
             }
         }
-        .navigationTitle("\(topic)")s
+        .navigationTitle("\(topic)")
     }
 }
 
@@ -76,6 +76,34 @@ struct QuizScreen: View {
             }
             Text("Quiz Form Goes Here so please work")
         }
+    }
+}
+
+
+
+struct FlashcardsScreen: View {
+    @State private var selectedTab = ""
+    var body: some View {
+        //see https://codewithchrist.com/swiftui-page-control-pagetabviewstyle/
+        // for a discussion of how t create this paged view
+        
+        TabView(selection: $selectedTab){
+            ForEach(vocabulary.keys.shuffled(), id: \.self) {key in
+                VStack{
+                    Text("\(key)")
+                        .font(.system(size: 0.60))
+                        .padding()
+                    
+                }
+                .background(Color(.systemBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .shadow(radius: 5)
+                .padding()
+                
+            }
+        }
+        .tabViewStyle(.page)
+        .indexViewStyle(.page(backgroundDisplayMode: PageIndexViewStyle.BackgroundDisplayMode.always))
     }
 }
 
