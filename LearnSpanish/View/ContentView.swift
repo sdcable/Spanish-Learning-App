@@ -20,6 +20,9 @@ let topics = [
 ]
 
 struct ContentView: View {
+    
+    @Bindable var spanishViewModel: SpanishViewModel
+    
     var body: some View {
         NavigationStack {
             List(topics, id: \.self) { topic in
@@ -147,5 +150,5 @@ let vocabulary: [String: [String]] = [
 ]
 
 #Preview {
-    ContentView()
+    ContentView(spanishViewModel:   SpanishViewModel())
 }

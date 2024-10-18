@@ -6,62 +6,157 @@
 //
 
 import SwiftUI
+import AVFoundation
+
+
 
 struct QuizScreen: View {
+    //For the animation
+    @State private var progress: CGFloat = 1.0  // 100% progress at start
+    @State private var timer: Timer?
+    let totalDuration: TimeInterval = 10  // Duration of the countdown in seconds
+    
+    //For Quiz
     let topic: String
     @State private var selectedAnswers: [Int: String] = [:] // Track the user's selected answers
-    @State private var showResults = false // Track whether to show results
+    @State private var currentQuestionIndex = 0 // Track the current question
     @State private var score = 0 // Track user's score
+    @State private var isCorrect = false // Track if the answer is correct
+    @State private var showFeedback = false // Show feedback after answering
+    var correctSound: AVAudioPlayer?
+    var incorrectSound: AVAudioPlayer?
+    var spanishViewModel = SpanishViewModel()
     
     var body: some View {
-        VStack {
-            Form {
-                if let questions = QuizQuestion[topic] {
-                    ForEach(0..<questions.count, id: \.self) { index in
-                        let question = questions[index]
-                        Section(header: Text(question.question)) {
-                            ForEach(question.options, id: \.self) { option in
-                                Button(action: {
-                                    selectedAnswers[index] = option
-                                }) {
-                                    HStack {
-                                        Text(option)
-                                        Spacer()
-                                        if selectedAnswers[index] == option {
-                                            Image(systemName: "checkmark")
-                                                .foregroundColor(.blue)
-                                        }
-                                    }
-                                }
-                            }
-                        }
+        if let questions = QuizQuestion[topic], currentQuestionIndex < questions.count {
+            VStack {
+                Button(action: {
+                    playSound(correct: true)
+                }) {
+                    Text("TestPlaySound")
+                }
+                Text("Question \(currentQuestionIndex + 1) of \(questions.count)")
+                    .font(.headline)
+                    .padding()
+                
+                Text(questions[currentQuestionIndex].question)
+                    .font(.title)
+                    .padding()
+                
+                LineProgress(progress: progress)
+                    .stroke(Color.blue, lineWidth: 5)
+                    .frame(height: 5)
+                    .padding()
+                
+                ForEach(questions[currentQuestionIndex].options, id: \.self) { option in
+                    Button(action: {
+                        checkAnswer(selected: option)
+                    }) {
+                        Text(option)
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                            .padding(.horizontal)
                     }
                 }
+                
+                Spacer()
             }
-            Button("Submit") {
-                calculateScore()
-                showResults = true
+            .navigationTitle("Quiz for \(topic)")
+            .alert(isPresented: $showFeedback) {
+                Alert(title: Text(isCorrect ? "Correct!" : "Wrong!"), message: Text("The correct answer is: \(questions[currentQuestionIndex].correctAnswer)"), dismissButton: .default(Text("Next"), action: {
+                    moveToNextQuestion()
+                }))
             }
-            .padding()
-            .disabled(selectedAnswers.count < QuizQuestion[topic]?.count ?? 0) // Disable button if not all questions answered
-            .alert(isPresented: $showResults) {
-                Alert(title: Text("Quiz Results"), message: Text("You got \(score) out of \(QuizQuestion[topic]?.count ?? 0) correct!"), dismissButton: .default(Text("OK")))
+            .onAppear{
+                resetTimer()
             }
-        }
-        .navigationTitle("Quiz for \(topic)")
-    }
-    
-    // Calculate the user's score based on their answers
-    func calculateScore() {
-        score = 0
-        if let questions = QuizQuestion[topic] {
-            for (index, question) in questions.enumerated() {
-                if selectedAnswers[index] == question.correctAnswer {
-                    score += 1
+        } else {
+            // Quiz finished, show score
+            VStack {
+                Text("Quiz Finished!")
+                    .font(.largeTitle)
+                    .padding()
+                
+                Text("You scored \(score) out of \(QuizQuestion[topic]?.count ?? 0)")
+                    .font(.title)
+                    .padding()
+                
+                Button(action: {
+                    resetQuiz()
+                }) {
+                    Text("Retry")
+                        .padding()
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                        .padding(.horizontal)
                 }
             }
         }
     }
+    
+    // Check the user's answer and show feedback
+    func checkAnswer(selected option: String) {
+        if let questions = QuizQuestion[topic] {
+            let correctAnswer = questions[currentQuestionIndex].correctAnswer
+            isCorrect = (option == correctAnswer)
+            
+            if isCorrect {
+                score += 1
+                playSound(correct: true)
+            } else {
+                playSound(correct: false)
+            }
+            
+            showFeedback = true
+        }
+    }
+    
+    // Move to the next question
+    func moveToNextQuestion() {
+        showFeedback = false
+        if currentQuestionIndex < (QuizQuestion[topic]?.count ?? 0) - 1 {
+            currentQuestionIndex += 1
+        } else {
+            // If it's the last question, set currentQuestionIndex to a value beyond the last index
+            currentQuestionIndex = QuizQuestion[topic]?.count ?? 0
+        }
+        resetTimer()
+    }
+    
+    // Play correct or incorrect sound
+    func playSound(correct: Bool) {
+        let soundName = correct ? "correct" : "wrong"
+        spanishViewModel.soundButtonPress(names:soundName)
+    }
+    
+    // Reset quiz to start over
+    func resetQuiz() {
+        selectedAnswers = [:]
+        currentQuestionIndex = 0
+        score = 0
+        resetTimer()
+    }
+    
+    func resetTimer() {
+            timer?.invalidate()
+            progress = 1.0  // Reset progress
+            
+            timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+                withAnimation(.linear(duration: 0.1)) {
+                    self.progress -= CGFloat(0.1 / totalDuration)
+                }
+                
+                if self.progress <= 0 {
+                    self.timer?.invalidate()
+                    self.moveToNextQuestion()  // Move to the next question once the time runs out
+                }
+            }
+        }
+
 }
 
 
