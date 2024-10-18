@@ -16,6 +16,10 @@ struct QuizScreen: View {
     @State private var timer: Timer?
     let totalDuration: TimeInterval = 10  // Duration of the countdown in seconds
     
+    //For Spin
+    @State private var shouldSpin = false
+    
+    
     //For Quiz
     let topic: String
     @State private var selectedAnswers: [Int: String] = [:] // Track the user's selected answers
@@ -28,13 +32,9 @@ struct QuizScreen: View {
     var spanishViewModel = SpanishViewModel()
     
     var body: some View {
-        if let questions = QuizQuestion[topic], currentQuestionIndex < questions.count {
+        GeometryReader { geometry in
+            if let questions = QuizQuestion[topic], currentQuestionIndex < questions.count {
             VStack {
-                Button(action: {
-                    playSound(correct: true)
-                }) {
-                    Text("TestPlaySound")
-                }
                 Text("Question \(currentQuestionIndex + 1) of \(questions.count)")
                     .font(.headline)
                     .padding()
@@ -72,7 +72,11 @@ struct QuizScreen: View {
             }
             .onAppear{
                 resetTimer()
+            
             }
+            .frame(minHeight: 0, maxHeight: .infinity)
+            .cardify(isFaceUp: true)
+            .rotationEffect(Angle.degrees(shouldSpin ? 360 : 0)) // Apply the spin animation
         } else {
             // Quiz finished, show score
             VStack {
@@ -95,8 +99,12 @@ struct QuizScreen: View {
                         .padding(.horizontal)
                 }
             }
+            .frame(minHeight: 0, maxHeight: .infinity)
+            .cardify(isFaceUp: true)
         }
     }
+        .padding()
+}
     
     // Check the user's answer and show feedback
     func checkAnswer(selected option: String) {
@@ -107,6 +115,9 @@ struct QuizScreen: View {
             if isCorrect {
                 score += 1
                 playSound(correct: true)
+                withAnimation(.easeInOut(duration: 1.0)){
+                    shouldSpin = true
+                }
             } else {
                 playSound(correct: false)
             }
@@ -124,6 +135,7 @@ struct QuizScreen: View {
             // If it's the last question, set currentQuestionIndex to a value beyond the last index
             currentQuestionIndex = QuizQuestion[topic]?.count ?? 0
         }
+        shouldSpin = false
         resetTimer()
     }
     
