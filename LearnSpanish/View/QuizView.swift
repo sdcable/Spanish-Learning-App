@@ -14,7 +14,7 @@ struct QuizScreen: View {
     //For the animation
     @State private var progress: CGFloat = 1.0  // 100% progress at start
     @State private var timer: Timer?
-    let totalDuration: TimeInterval = 10  // Duration of the countdown in seconds
+    let totalDuration: TimeInterval = 20  // Duration of the countdown in seconds
     
     //For Spin
     @State private var shouldSpin = false
@@ -25,11 +25,15 @@ struct QuizScreen: View {
     @State private var selectedAnswers: [Int: String] = [:] // Track the user's selected answers
     @State private var currentQuestionIndex = 0 // Track the current question
     @State private var score = 0 // Track user's score
+    @State private var trackCorrectScore = 0 //Track user's number correct
     @State private var isCorrect = false // Track if the answer is correct
     @State private var showFeedback = false // Show feedback after answering
     var correctSound: AVAudioPlayer?
     var incorrectSound: AVAudioPlayer?
     var spanishViewModel = SpanishViewModel()
+    
+    //Keeping track of score
+    @State private var elapsedTime: TimeInterval = 20
     
     var body: some View {
         GeometryReader { geometry in
@@ -65,11 +69,29 @@ struct QuizScreen: View {
                 Spacer()
             }
             .navigationTitle("Quiz for \(topic)")
-            .alert(isPresented: $showFeedback) {
-                Alert(title: Text(isCorrect ? "Correct!" : "Wrong!"), message: Text("The correct answer is: \(questions[currentQuestionIndex].correctAnswer)"), dismissButton: .default(Text("Next"), action: {
-                    moveToNextQuestion()
-                }))
-            }
+            .sheet(isPresented: $showFeedback, onDismiss: moveToNextQuestion) {
+                    VStack {
+                        Text(isCorrect ? "Correct!" : "Wrong!")
+                            .font(.largeTitle)
+                            .padding()
+
+                        Text("The correct answer is: \(questions[currentQuestionIndex].correctAnswer)")
+                            .font(.title2)
+                            .padding()
+                        
+                        Text("Your score so far: \(trackCorrectScore) / \(questions.count)")
+                        Text("Your total points so far is \(score)")
+                            .padding(.bottom)
+
+                        Button("Next") {
+                            showFeedback = false
+                        }
+                        .padding()
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                    }
+                }
             .onAppear{
                 resetTimer()
             
@@ -84,9 +106,11 @@ struct QuizScreen: View {
                     .font(.largeTitle)
                     .padding()
                 
-                Text("You scored \(score) out of \(QuizQuestion[topic]?.count ?? 0)")
+                Text("You scored \(trackCorrectScore) out of \(QuizQuestion[topic]?.count ?? 0)")
                     .font(.title)
                     .padding()
+                
+                Text("You finished with a score of \(score)")
                 
                 Button(action: {
                     resetQuiz()
@@ -108,21 +132,30 @@ struct QuizScreen: View {
     
     // Check the user's answer and show feedback
     func checkAnswer(selected option: String) {
+        timer?.invalidate()
         if let questions = QuizQuestion[topic] {
             let correctAnswer = questions[currentQuestionIndex].correctAnswer
             isCorrect = (option == correctAnswer)
             
             if isCorrect {
-                score += 1
+                score += 10
+                trackCorrectScore += 1
+                
+                let bonus = Int(ceil(max(0, (elapsedTime) / 2)))
+                score += bonus
+                
                 playSound(correct: true)
                 withAnimation(.easeInOut(duration: 1.0)){
                     shouldSpin = true
                 }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                    showFeedback = true
+                }
             } else {
                 playSound(correct: false)
+                showFeedback = true
             }
             
-            showFeedback = true
         }
     }
     
@@ -141,7 +174,7 @@ struct QuizScreen: View {
     
     // Play correct or incorrect sound
     func playSound(correct: Bool) {
-        let soundName = correct ? "correct" : "wrong"
+        let soundName = correct ? "correct.mp3" : "wrong.m4a"
         spanishViewModel.soundButtonPress(names:soundName)
     }
     
@@ -150,21 +183,23 @@ struct QuizScreen: View {
         selectedAnswers = [:]
         currentQuestionIndex = 0
         score = 0
+        trackCorrectScore = 0
         resetTimer()
     }
     
     func resetTimer() {
             timer?.invalidate()
             progress = 1.0  // Reset progress
+            elapsedTime = 20
             
             timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+                elapsedTime -= 0.1
                 withAnimation(.linear(duration: 0.1)) {
                     self.progress -= CGFloat(0.1 / totalDuration)
                 }
                 
                 if self.progress <= 0 {
                     self.timer?.invalidate()
-                    self.moveToNextQuestion()  // Move to the next question once the time runs out
                 }
             }
         }

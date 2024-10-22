@@ -12,7 +12,7 @@ struct SoundPlayer {
     var player: AVAudioPlayer?
 
     mutating func playSound(named soundName: String) async {
-        guard let path = Bundle.main.path(forResource: soundName, ofType: "mp3") else {
+        guard let path = Bundle.main.path(forResource: soundName, ofType: nil) else {
             return
         }
 

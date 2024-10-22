@@ -14,7 +14,7 @@ let topics = [
     "Colors",
     "Family Members",
     "Food and Drink",
-    "Common Adjetives",
+    "Common Adjectives",
     "Days of the Week",
     "Weather Vocabulary"
 ]
