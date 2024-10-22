@@ -9,7 +9,7 @@ import SwiftUI
 
 struct Cardify: Animatable, ViewModifier {
     var isFaceUp: Bool {
-        rotation < 90
+        rotation < 270
     }
     
     var animatableData: Double {
@@ -20,7 +20,7 @@ struct Cardify: Animatable, ViewModifier {
     var rotation: Double
     
     init(isFaceUp: Bool) {
-        rotation = isFaceUp ? 0 : 180
+        rotation = isFaceUp ? 0 : 360
     }
     
     func body(content: Content) -> some View {
@@ -31,13 +31,14 @@ struct Cardify: Animatable, ViewModifier {
                     RoundedRectangle(cornerRadius: cornerRadius(for: geometry.size)).fill(.white)
                     RoundedRectangle(cornerRadius: cornerRadius(for: geometry.size)).stroke()
                 } else {
-                    RoundedRectangle(cornerRadius: cornerRadius(for: geometry.size))
+                    RoundedRectangle(cornerRadius: cornerRadius(for: geometry.size)).fill(.white)
+                    RoundedRectangle(cornerRadius: cornerRadius(for: geometry.size)).stroke()
                 }
-                content.opacity(isFaceUp ? 1 : 0)
+                content.opacity(isFaceUp ? 1 : 1)
             }
             
         }
-        .rotation3DEffect(Angle(degrees: rotation), axis: (x: 0.0, y: 1.0, z: 0.0))
+        .rotation3DEffect(Angle(degrees: rotation), axis: (x: 1.0, y: 1.0, z: 0.0))
     }
     
     //MARK: - Drawing constants
