@@ -76,7 +76,7 @@ struct QuizScreen: View {
                                 .frame(maxWidth: .infinity)
                                 .background(Color.blue)
                                 .foregroundColor(.white)
-                                .cornerRadius(10)
+                                .cornerRadius(11)
                                 .padding(.horizontal)
                         }
                     }
