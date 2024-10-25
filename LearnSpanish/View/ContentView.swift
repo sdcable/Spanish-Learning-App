@@ -7,43 +7,48 @@
 
 import SwiftUI
 
-let topics = [
-    "Basic Greetings and Farewells",
-    "Common Phrases",
-    "Numbers (1-10)",
-    "Colors",
-    "Family Members",
-    "Food and Drink",
-    "Common Adjectives",
-    "Days of the Week",
-    "Weather Vocabulary"
-]
-
 struct ContentView: View {
-    
-    @Bindable var spanishViewModel: SpanishViewModel
+    var spanishViewModel: SpanishViewModel
     
     var body: some View {
         NavigationStack {
-            List(topics, id: \.self) { topic in
-                TopicCell(topic: topic)
+            List(spanishViewModel.topics, id: \.self) { topic in
+                TopicCell(topic: topic, spanishViewModel: spanishViewModel)
             }
             .listStyle(.plain)
             .navigationTitle("Learn Spanish")
         }
     }
 }
-    
-struct TopicCell: View{
+
+struct TopicCell: View {
     let topic: String
+    @State private var isCompleted: Bool = false
+    var spanishViewModel: SpanishViewModel  // Add ViewModel as a property
     
     var body: some View {
-        HStack{
-            NavigationLink{
-                TopicLessonView(topic: topic)
-            }label: {
+        HStack {
+                // Button to toggle completion status
+                Button(action: {
+                    isCompleted.toggle()  // Toggle the state
+                    spanishViewModel.saveCompletionState(for: topic, isCompleted: isCompleted)  // Save using ViewModel
+                }) {
+                    Image(systemName: isCompleted ? "checkmark.square.fill" : "square")
+                        .foregroundColor(isCompleted ? .green : .gray)
+                }
+                
+                .buttonStyle(PlainButtonStyle())  // Make the button look like a simple image toggle
+            NavigationLink {
+                TopicLessonView(topic: topic, spanishViewModel: spanishViewModel)
+            } label: {
                 Text(topic)
+                Spacer()
             }
+            
+        }
+        .padding(.vertical, 8)
+        .onAppear {
+            isCompleted = spanishViewModel.loadCompletionState(for: topic)  // Load the state using ViewModel
         }
     }
 }
@@ -55,10 +60,13 @@ struct TopicLessonView: View {
         GridItem(.flexible())
     ]
     
+    @State private var flashcardsCompleted: Bool = false
+    @State private var quizCompleted: Bool = false
+    var spanishViewModel: SpanishViewModel  // Add ViewModel to manage state
+    
     var body: some View {
         VStack {
             ScrollView {
-                Text("Lesson about: \(topic)")
                 Text("\(spanishLessons[topic] ?? "No information available")")
                     .padding()
                 
@@ -95,37 +103,79 @@ struct TopicLessonView: View {
             
             Spacer()
             
-            HStack(spacing: 20) {
-                NavigationLink {
-                    FlashcardsScreen(topic: topic)
-                } label: {
-                    Text("Flashcards")
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .padding()
-                        .background(Color.green)
-                        .cornerRadius(10)
-                }
-                NavigationLink {
-                    QuizScreen(topic: topic)
-                } label: {
-                    Text("Take the Quiz")
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .padding()
-                        .background(Color.blue)
-                        .cornerRadius(10)
+            VStack {
+                HStack(spacing: 40) {
+                    VStack {
+                        NavigationLink {
+                            FlashcardsScreen(topic: topic, spanishViewModel: spanishViewModel)
+                        } label: {
+                            Text("Flashcards")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                                .padding()
+                                .background(Color.green)
+                                .cornerRadius(10)
+                        }
+                        
+                        // Flashcards checkbox
+                        HStack {
+                            Text("Completed?")
+                            Button(action: {
+                                flashcardsCompleted.toggle()
+                                spanishViewModel.saveCompletionState(for: "\(topic)_flashcards", isCompleted: flashcardsCompleted)
+                            }) {
+                                Image(systemName: flashcardsCompleted ? "checkmark.square.fill" : "square")
+                                    .foregroundColor(flashcardsCompleted ? .green : .gray)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
+                    }
+                    
+                    VStack {
+                        NavigationLink {
+                            QuizScreen(topic: topic, spanishViewModel: spanishViewModel)
+                        } label: {
+                            Text("Take the Quiz")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                                .padding()
+                                .background(Color.blue)
+                                .cornerRadius(10)
+                        }
+                        
+                        // Quiz checkbox
+                        HStack {
+                            Text("Completed 5/5?")
+                            Button(action: {
+                                quizCompleted.toggle()
+                                spanishViewModel.saveCompletionState(for: "\(topic)_quiz", isCompleted: quizCompleted)
+                            }) {
+                                Image(systemName: quizCompleted ? "checkmark.square.fill" : "square")
+                                    .foregroundColor(quizCompleted ? .green : .gray)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
+                    }
                 }
             }
+            .padding(.top, 20)
         }
         .navigationTitle("\(topic)")
+        .onAppear {
+            // Load the saved states from UserDefaults
+            flashcardsCompleted = spanishViewModel.loadCompletionState(for: "\(topic)_flashcards")
+            quizCompleted = spanishViewModel.loadCompletionState(for: "\(topic)_quiz")
+        }
     }
 }
 
 
 
+
+
 struct FlashcardsScreen: View {
     let topic: String
+    var spanishViewModel: SpanishViewModel
     @State private var currentIndex = 0
     @State private var isFaceUp = true
     @State private var shuffledVocabList: [[String: String]] = []
@@ -183,6 +233,7 @@ struct FlashcardsScreen: View {
         .navigationTitle("Flashcards: \(topic)")
         .onAppear() {
             shuffleVocab()
+            spanishViewModel.saveCompletionState(for: "\(topic)_flashcards", isCompleted: true)
         }
     }
     

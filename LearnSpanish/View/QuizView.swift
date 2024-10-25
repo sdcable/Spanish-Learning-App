@@ -11,78 +11,90 @@ import AVFoundation
 
 
 struct QuizScreen: View {
-    //For the animation
-    @State private var progress: CGFloat = 1.0  // 100% progress at start
+    // For the animation
+    @State private var progress: CGFloat = 1.0
     @State private var timer: Timer?
-    let totalDuration: TimeInterval = 20  // Duration of the countdown in seconds
+    let totalDuration: TimeInterval = 20
     
-    //For Spin
+    // For Spin
     @State private var shouldSpin = false
     
-    
-    //For Quiz
+    // For Quiz
     let topic: String
-    @State private var selectedAnswers: [Int: String] = [:] // Track the user's selected answers
-    @State private var currentQuestionIndex = 0 // Track the current question
-    @State private var score = 0 // Track user's score
-    @State private var trackCorrectScore = 0 //Track user's number correct
-    @State private var isCorrect = false // Track if the answer is correct
-    @State private var showFeedback = false // Show feedback after answering
-    var correctSound: AVAudioPlayer?
-    var incorrectSound: AVAudioPlayer?
-    var spanishViewModel = SpanishViewModel()
+    @State private var selectedAnswers: [Int: String] = [:]
+    @State private var currentQuestionIndex = 0
+    @State private var score = 0
+    @State private var trackCorrectScore = 0
+    @State private var isCorrect = false
+    @State private var showFeedback = false
+    var spanishViewModel: SpanishViewModel
     
-    //Keeping track of score
+    // High Score
+    @State private var highScore = 0  // Track the high score
+    
     @State private var elapsedTime: TimeInterval = 20
     
     var body: some View {
         GeometryReader { geometry in
             if let questions = QuizQuestion[topic], currentQuestionIndex < questions.count {
-            VStack {
-                Text("Question \(currentQuestionIndex + 1) of \(questions.count)")
-                    .font(.headline)
-                    .padding()
-                
-                Text(questions[currentQuestionIndex].question)
-                    .font(.title)
-                    .padding()
-                
-                LineProgress(progress: progress)
-                    .stroke(Color.blue, lineWidth: 5)
-                    .frame(height: 5)
-                    .padding()
-                
-                ForEach(questions[currentQuestionIndex].options, id: \.self) { option in
-                    Button(action: {
-                        checkAnswer(selected: option)
-                    }) {
-                        Text(option)
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(Color.blue)
-                            .foregroundColor(.white)
-                            .cornerRadius(10)
-                            .padding(.horizontal)
+                VStack {
+                    Text("High Score: \(highScore)")
+                        .font(.headline)
+                        .padding(.top)
+                        .padding(.horizontal)
+                    
+                    Text("Answers Correct: \(trackCorrectScore)/\(currentQuestionIndex)")
+                        .font(.headline)
+                    
+                    Text("Current Score: \(score)")
+                    
+                    Text("Question \(currentQuestionIndex + 1) of \(questions.count)")
+                        .font(.headline)
+                        .padding()
+                    
+                    Text(questions[currentQuestionIndex].question)
+                        .font(.title)
+                        .padding()
+                    
+                    LineProgress(progress: progress)
+                        .stroke(Color.blue, lineWidth: 5)
+                        .frame(height: 5)
+                        .padding()
+                    
+                    // Countdown timer text
+                    Text("Time remaining: \(Int(elapsedTime)) seconds")
+                        .font(.title2)
+                        .foregroundColor(elapsedTime > 5 ? .black : .red) // Change color based on time
+                        .padding()
+                    
+                    
+                    
+                    ForEach(questions[currentQuestionIndex].options, id: \.self) { option in
+                        Button(action: {
+                            checkAnswer(selected: option)
+                        }) {
+                            Text(option)
+                                .padding()
+                                .frame(maxWidth: .infinity)
+                                .background(Color.blue)
+                                .foregroundColor(.white)
+                                .cornerRadius(10)
+                                .padding(.horizontal)
+                        }
                     }
+                    
+                    Spacer()
                 }
-                
-                Spacer()
-            }
-            .navigationTitle("Quiz for \(topic)")
-            .sheet(isPresented: $showFeedback, onDismiss: moveToNextQuestion) {
+                .navigationTitle("Quiz for \(topic)")
+                .sheet(isPresented: $showFeedback, onDismiss: moveToNextQuestion) {
                     VStack {
                         Text(isCorrect ? "Correct!" : "Wrong!")
                             .font(.largeTitle)
                             .padding()
-
-                        Text("The correct answer is: \(questions[currentQuestionIndex].correctAnswer)")
-                            .font(.title2)
-                            .padding()
                         
-                        Text("Your score so far: \(trackCorrectScore) / \(questions.count)")
-                        Text("Your total points so far is \(score)")
+                        Text("Total points so far: \(score)")
                             .padding(.bottom)
-
+                        
                         Button("Next") {
                             showFeedback = false
                         }
@@ -92,43 +104,59 @@ struct QuizScreen: View {
                         .cornerRadius(10)
                     }
                 }
-            .onAppear{
-                resetTimer()
-            
-            }
-            .frame(minHeight: 0, maxHeight: .infinity)
-            .cardify(isFaceUp: true)
-            .rotationEffect(Angle.degrees(shouldSpin ? 360 : 0)) // Apply the spin animation
-        } else {
-            // Quiz finished, show score
-            VStack {
-                Text("Quiz Finished!")
-                    .font(.largeTitle)
-                    .padding()
-                
-                Text("You scored \(trackCorrectScore) out of \(QuizQuestion[topic]?.count ?? 0)")
-                    .font(.title)
-                    .padding()
-                
-                Text("You finished with a score of \(score)")
-                
-                Button(action: {
-                    resetQuiz()
-                }) {
-                    Text("Retry")
+                .onAppear {
+                    loadHighScore()
+                    resetTimer()
+                }
+                .frame(minHeight: 0, maxHeight: .infinity)
+                .cardify(isFaceUp: true)
+                .rotationEffect(Angle.degrees(shouldSpin ? 360 : 0))
+            } else {
+                VStack {
+                    Text("Quiz Finished!")
+                        .font(.largeTitle)
                         .padding()
-                        .background(Color.blue)
+                    
+                    Text("Final Score: \(trackCorrectScore) / \(QuizQuestion[topic]?.count ?? 0)")
+                    Text("Total Points: \(score)")
+                        .padding(.bottom)
+                    
+                    if score > highScore {
+                        Text("New High Score!")
+                            .font(.headline)
+                            .foregroundColor(.green)
+                            .padding()
+                        Button("Save High Score") {
+                            saveHighScore()
+                        }
+                        .padding()
+                        .background(Color.green)
                         .foregroundColor(.white)
                         .cornerRadius(10)
-                        .padding(.horizontal)
+                    }
+                    
+                    Button(action: {
+                        resetQuiz()
+                    }) {
+                        Text("Retry")
+                            .padding()
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                            .padding(.horizontal)
+                    }
+                }
+                .frame(minHeight: 0, maxHeight: .infinity)
+                .cardify(isFaceUp: true)
+                .onAppear {
+                    if trackCorrectScore == 5 {
+                        spanishViewModel.saveCompletionState(for: "\(topic)_quiz", isCompleted: true)
+                    }
                 }
             }
-            .frame(minHeight: 0, maxHeight: .infinity)
-            .cardify(isFaceUp: true)
         }
-    }
         .padding()
-}
+    }
     
     // Check the user's answer and show feedback
     func checkAnswer(selected option: String) {
@@ -201,6 +229,17 @@ struct QuizScreen: View {
                 if self.progress <= 0 {
                     self.timer?.invalidate()
                 }
+            }
+        }
+    
+    func loadHighScore() {
+            highScore = UserDefaults.standard.integer(forKey: "\(topic)_highScore")
+        }
+        
+        func saveHighScore() {
+            if score > highScore {
+                highScore = score
+                UserDefaults.standard.set(highScore, forKey: "\(topic)_highScore")
             }
         }
 
