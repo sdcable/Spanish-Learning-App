@@ -62,7 +62,7 @@ struct TopicLessonView: View {
     
     @State private var flashcardsCompleted: Bool = false
     @State private var quizCompleted: Bool = false
-    var spanishViewModel: SpanishViewModel  // Add ViewModel to manage state
+    var spanishViewModel: SpanishViewModel
     
     var body: some View {
         VStack {

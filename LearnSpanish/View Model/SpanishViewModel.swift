@@ -12,6 +12,7 @@ var soundPlayer = SoundPlayer()
 @Observable class SpanishViewModel {
     // MARK: - Properties
     private let visitedLessonsKey = "visitedLessons"
+    private var spanishModel = SpanishModel()
     
     // Fetch visited lessons from UserDefaults
     private var visitedLessons: Set<String> {
@@ -59,13 +60,16 @@ var soundPlayer = SoundPlayer()
     }
     
     func soundButtonPress(names: String) {
-        var name = names
+        let name = names
         Task {
             await soundPlayer.playSound(named: name)
         }
     }
     
-    
+    func getQuizQuestions(for topic: String) -> [SpanishModel.QuizQuestion]? {
+        return spanishModel.quizData[topic]
+    }
+      
     
     // MARK: - Private Helpers
 }
