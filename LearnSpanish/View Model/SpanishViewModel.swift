@@ -24,17 +24,10 @@ var soundPlayer = SoundPlayer()
         }
     }
     
-    let topics = [
-        "Basic Greetings and Farewells",
-        "Common Phrases",
-        "Numbers (1-10)",
-        "Colors",
-        "Family Members",
-        "Food and Drink",
-        "Common Adjectives",
-        "Days of the Week",
-        "Weather Vocabulary"
-    ]
+    func getTopics() -> [String] {
+        spanishModel.topics
+    }
+    
     
     // MARK: - Model access
     
@@ -68,6 +61,14 @@ var soundPlayer = SoundPlayer()
     
     func getQuizQuestions(for topic: String) -> [SpanishModel.QuizQuestion]? {
         return spanishModel.quizData[topic]
+    }
+    
+    func getSpanishLesson(for topic: String) -> String? {
+        return spanishModel.spanishLessons[topic]
+    }
+    
+    func getVocabList(for topic: String) -> [[String: String]]? {
+        return spanishModel.vocabulary[topic]
     }
       
     

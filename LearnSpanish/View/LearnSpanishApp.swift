@@ -11,7 +11,7 @@ import SwiftUI
 struct LearnSpanishApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView(spanishViewModel : SpanishViewModel())
+            HomePageView(spanishViewModel : SpanishViewModel())
         }
     }
 }
