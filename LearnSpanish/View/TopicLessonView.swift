@@ -112,6 +112,9 @@ struct TopicLessonView: View {
                     }
                 }
             }
+            
+            .background(Color("OffWhite"))
+            .edgesIgnoringSafeArea(.all)
             .padding(.top, 20)
         }
         .navigationTitle("\(topic)")

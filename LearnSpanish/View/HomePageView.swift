@@ -16,8 +16,11 @@ struct HomePageView: View {
                 TopicCell(topic: topic, spanishViewModel: spanishViewModel)
             }
             .listStyle(.plain)
+            .background(Color("OffWhite"))
             .navigationTitle("Learn Spanish")
         }
+        .background(Color("OffWhite"))
+        .edgesIgnoringSafeArea(.all)
     }
 }
 
@@ -50,6 +53,7 @@ struct TopicCell: View {
         .onAppear {
             isCompleted = spanishViewModel.loadCompletionState(for: topic)  // Load the state
         }
+        
     }
 }
 

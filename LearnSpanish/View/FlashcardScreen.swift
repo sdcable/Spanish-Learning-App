@@ -23,7 +23,7 @@ struct FlashcardsScreen: View {
             .font(.largeTitle)
 
         VStack {
-            if !shuffledVocabList.isEmpty {
+            if !shuffledVocabList.isEmpty { //This is to allow shuffling each time
                 VStack {
                     ZStack {
                         if let spanish = shuffledVocabList[currentIndex]["Spanish"], let english = shuffledVocabList[currentIndex]["English"] {

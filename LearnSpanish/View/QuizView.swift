@@ -153,6 +153,9 @@ struct QuizScreen: View {
                 }
             }
         }
+        
+        .background(Color("OffWhite"))
+        .edgesIgnoringSafeArea(.all)
         .padding()
     }
     
